@@ -66,7 +66,7 @@ python3 listings/tools/listing.py resolve-shop --shop-name <name> --write  # sho
 | 原稿執筆後に manifest が変わった | `validate` / `push` が ERROR で停止 |
 | 原稿執筆後に市況が変わった | WARN 表示（`plan` は再執筆を指示） |
 | Etsy 制約違反（文字数・タグ数・禁止文字） | `push` が ERROR で停止 |
-| AI 開示なし | `push` が ERROR で停止 |
+| AI 開示の文面なし | `push` が ERROR で停止 |
 | 送信したが Etsy 側に反映されていない | 読み戻し照合で検出、pushed として記録しない |
 
 `push` は既定で dry-run。`--apply` を付けたときだけ送信する。
@@ -92,6 +92,15 @@ python3 listings/tools/listing.py resolve-shop --shop-name <name> --write  # sho
 
 部分反映が必要なときは `--language` で言語を絞れる。部分 push は registry に
 「完了」として記録されないため、残作業が隠れない。
+
+## API で設定できないもの
+
+- **AI 開示チェックボックス**（Shop Manager > 制作方法 > `whatContent:ai_gen`）。
+  タクソノミのプロパティ一覧に存在せず、リスティングの JSON にも現れない。
+  Etsy が強制執行するのはこのフラグであり、説明文の開示文ではない。
+  `validate` の ERROR は文面の有無しか見ていないので、**通っても未対応でありうる**。
+  公開前に手動で確認する。
+- 商品の公開（draft → active）。意図しない販売開始を防ぐため実装しない。
 
 ## Etsy API
 
@@ -148,13 +157,32 @@ Etsy 側でポリシーが変わったらここを直す。雛形は `etsy.examp
 不足があれば `create` が実行前に拒否する（`listing_defaults in etsy.json is
 missing [...]`）ので、欠けたまま出品されることはない。
 
+必須プロパティ（Craft type）は `listing_defaults.properties` から `create` が自動で
+設定する。未設定だと Etsy 側で公開できない。
+
+## アップロード
+
+```sh
+python3 listings/tools/listing.py upload --release <key>          # dry run
+python3 listings/tools/listing.py upload --release <key> --apply
+```
+
+`marketing/` の画像（アイキャッチ→シート画像の順で rank 1,2）と、`customer/` の
+納品 PNG・編集可能 PDF を送る。**個別 PNG と `qa/` は対象外**。送信後に読み戻して
+件数を照合する。
+
+エンドポイントごとに multipart のフィールド名が違う点に注意:
+
+| 用途 | メソッド | パス | フィールド |
+|---|---|---|---|
+| 画像アップロード | POST | `/shops/{shop}/listings/{id}/images` | `image` |
+| ファイルアップロード | POST | `/shops/{shop}/listings/{id}/files` | `file` |
+| 画像の取得 | GET | `/listings/{id}/images`（shop 無し） | — |
+
+生成クライアントの資料には `_file` とあるが、実 API は `file` を要求する。
+画像の GET だけ shop スコープではない。
+
 作成後に手作業で残るもの:
 
-- デジタルファイルのアップロード（PNGシート・PDF・個別PNG）
-- 商品写真（`marketing/` のアイキャッチ）
+- **AI 開示チェックボックス**（API 非対応。上記「API で設定できないもの」参照）
 - 価格の確認と公開
-
-## 将来やること
-
-デジタルファイルと商品画像のアップロード（`uploadListingFile` / `uploadListingImage`）は
-未実装。現状は Shop Manager で手動。

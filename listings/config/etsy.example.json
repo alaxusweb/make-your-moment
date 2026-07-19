@@ -15,6 +15,20 @@
     "type": "download",
     "return_policy_id": 1,
     "price": 5.0,
-    "currency": "USD"
+    "currency": "USD",
+    "properties": [
+      {
+        "property_id": 47626759760,
+        "name": "Craft type",
+        "value_ids": [
+          584,
+          541
+        ],
+        "values": [
+          "Scrapbooking",
+          "Collage"
+        ]
+      }
+    ]
   }
 }

@@ -466,6 +466,20 @@ def command_create(args: argparse.Namespace) -> int:
         )
         print(f"linked {key} -> {listing_id}")
 
+        # Etsy requires some taxonomy properties (Craft type for this category)
+        # before a listing can be published. Apply them here so a new product
+        # is not left half-configured.
+        for prop in defaults.get("properties", []):
+            client.update_listing_property(
+                listing_id,
+                prop["property_id"],
+                value_ids=prop.get("value_ids"),
+                values=prop.get("values"),
+            )
+            etsy_api.throttle()
+            print(f"set property {prop.get('name', prop['property_id'])} "
+                  f"= {prop.get('values')}")
+
         for language, localized in sorted(loaded.listings.items()):
             if language == loaded.primary_language:
                 continue
@@ -485,9 +499,114 @@ def command_create(args: argparse.Namespace) -> int:
         return 1
 
     print("\nremaining manual steps in Shop Manager:")
-    print("  - upload the digital files (PNG sheet, PDF, individual PNGs)")
-    print("  - upload listing photos / the marketing eyecatch")
+    print("  - TICK THE AI DISCLOSURE BOX (制作方法 > whatContent:ai_gen).")
+    print("    This field is not in the Etsy API, so no tool here can set it.")
+    print("    Etsy enforces the checkbox, not the wording in the description.")
+    print("  - run 'listing.py upload --release <key> --apply' for photos/files")
     print("  - confirm the price, then publish")
+    return 0
+
+
+def collect_assets(rel) -> tuple[list[Path], list[Path]]:
+    """Find the listing photos and digital files for a release.
+
+    Photos come from marketing/ and are ordered eyecatch first, because rank 1
+    is the shop thumbnail. Digital files are the sheet PNG and the editable
+    PDF; individual stickers are deliberately not included.
+    """
+    release_dir = PROJECT_ROOT / "output/releases" / rel.key
+    marketing = release_dir / "marketing"
+    customer = release_dir / "customer"
+
+    images: list[Path] = []
+    images += sorted(marketing.glob("*eyecatch*.png"))
+    images += sorted(marketing.glob("*photo-sheet*.jpg"))
+
+    files = [
+        path
+        for path in (customer / rel.png_filename, customer / rel.pdf_filename)
+        if path.exists()
+    ]
+    return images, files
+
+
+def command_upload(args: argparse.Namespace) -> int:
+    """Upload listing photos and digital files for a release."""
+    try:
+        rel = release_module.find_release(PROJECT_ROOT, args.release)
+    except (FileNotFoundError, ValueError) as error:
+        print(f"refused: {error}", file=sys.stderr)
+        return 1
+
+    registry = registry_module.Registry(REGISTRY_DB)
+    link = registry.get(rel.key)
+    if link is None:
+        print(f"refused: {rel.key} is not linked. Run 'create' or 'link' first.",
+              file=sys.stderr)
+        return 1
+
+    images, files = collect_assets(rel)
+    if args.skip_images:
+        images = []
+    if args.skip_files:
+        files = []
+    if not images and not files:
+        print("nothing to upload")
+        return 1
+
+    try:
+        config = etsy_api.EtsyConfig.load(ETSY_CONFIG)
+        client = etsy_api.EtsyClient(config)
+        listing = client.get_listing(link.listing_id)
+    except etsy_api.EtsyError as error:
+        print(f"failed: {error}", file=sys.stderr)
+        return 1
+
+    state = listing.get("state")
+    print(f"listing {link.listing_id} (state={state})")
+    for rank, path in enumerate(images, start=1):
+        size = path.stat().st_size // 1024
+        print(f"  image rank {rank}: {path.name} ({size} KB)")
+    for rank, path in enumerate(files, start=1):
+        size = path.stat().st_size // 1024
+        print(f"  file  rank {rank}: {path.name} ({size} KB)")
+
+    if not args.apply:
+        if state == "active":
+            print("  NOTE: this listing is live; uploading changes what buyers see")
+        print("re-run with --apply to upload")
+        return 0
+
+    alt_text = f"{rel.name_en} sticker sheet, {rel.month_name_en} {rel.year}"
+    try:
+        for rank, path in enumerate(images, start=1):
+            client.upload_listing_image(
+                link.listing_id, path, rank=rank, alt_text=alt_text
+            )
+            print(f"  uploaded image rank {rank}: {path.name}")
+            etsy_api.throttle(0.5)
+        for rank, path in enumerate(files, start=1):
+            client.upload_listing_file(link.listing_id, path, rank=rank)
+            print(f"  uploaded file rank {rank}: {path.name}")
+            etsy_api.throttle(0.5)
+
+        stored_images = client.get_listing_images(link.listing_id)
+        stored_files = client.get_listing_files(link.listing_id)
+    except etsy_api.EtsyError as error:
+        print(f"failed: {error}", file=sys.stderr)
+        return 1
+
+    print(f"\nread-back: {len(stored_images)} image(s), {len(stored_files)} file(s)")
+    for image in stored_images:
+        print(f"  image {image.get('listing_image_id')} rank={image.get('rank')}")
+    for stored in stored_files:
+        print(f"  file  {stored.get('listing_file_id')} {stored.get('filename')} "
+              f"({stored.get('filesize')})")
+
+    if len(stored_images) < len(images) or len(stored_files) < len(files):
+        print("WARNING: fewer assets stored than uploaded; inspect the listing",
+              file=sys.stderr)
+        return 1
     return 0
 
 
@@ -819,6 +938,15 @@ def build_parser() -> argparse.ArgumentParser:
     create.add_argument("--apply", action="store_true")
     create.add_argument("--price", type=float, help="overrides listing_defaults")
     create.set_defaults(func=command_create)
+
+    upload = sub.add_parser(
+        "upload", help="upload listing photos and digital files"
+    )
+    upload.add_argument("--release", required=True)
+    upload.add_argument("--apply", action="store_true")
+    upload.add_argument("--skip-images", action="store_true")
+    upload.add_argument("--skip-files", action="store_true")
+    upload.set_defaults(func=command_upload)
 
     shop_listings = sub.add_parser(
         "shop-listings", help="list the shop's Etsy listings and their link state"

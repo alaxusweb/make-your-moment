@@ -306,6 +306,12 @@ def validate_draft(draft: Draft, *, current_manifest_sha256: str | None = None,
     # compass_artifact.md L90: Etsy began enforcing generative-AI disclosure on
     # 2026-01-14. Artwork in this repository is image-generated, so a draft that
     # does not disclose is a policy violation, not a style choice.
+    #
+    # IMPORTANT: this flag only governs the disclosure wording in the listing
+    # copy. Etsy's actual enforcement hangs off a checkbox in Shop Manager
+    # (制作方法 > whatContent:ai_gen) that is absent from the taxonomy property
+    # list and cannot be set through the API. Passing validation here does NOT
+    # mean the listing is compliant.
     if not draft.ai_disclosure:
         issues.append(
             Issue(
@@ -314,6 +320,15 @@ def validate_draft(draft: Draft, *, current_manifest_sha256: str | None = None,
                 "ai_disclosure is false. Etsy requires disclosing AI-generated "
                 "artwork; set it true, or record why this release is exempt in "
                 "compliance.note and re-run with --allow-no-ai-disclosure.",
+            )
+        )
+    else:
+        issues.append(
+            Issue(
+                "warning",
+                "compliance",
+                "disclosure wording is present, but the Shop Manager AI checkbox "
+                "cannot be set via the API. Confirm it by hand before publishing.",
             )
         )
 

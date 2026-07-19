@@ -5,6 +5,9 @@ Endpoints used (verified against developers.etsy.com, 2026-07):
   PATCH /v3/application/shops/{shop_id}/listings/{listing_id}
   PUT   /v3/application/shops/{shop_id}/listings/{listing_id}/translations/{language}
   GET   /v3/application/listings/{listing_id}
+  GET   /v3/application/listings/{listing_id}/images                   (listing-scoped)
+  POST  /v3/application/shops/{shop_id}/listings/{listing_id}/images   (multipart, field `image`)
+  POST  /v3/application/shops/{shop_id}/listings/{listing_id}/files    (multipart, field `file`)
   POST  https://api.etsy.com/v3/public/oauth/token   (grant_type=refresh_token)
 
 Etsy's own documentation is inconsistent about whether write bodies should be
@@ -15,6 +18,7 @@ back to confirm what actually landed. Never trust the 200; trust the read-back.
 from __future__ import annotations
 
 import json
+import secrets
 import time
 import urllib.error
 import urllib.parse
@@ -118,6 +122,49 @@ class EtsyConfig:
         expiry = datetime.fromisoformat(self.access_token_expires_at)
         # Refresh a minute early so a slow push cannot straddle the expiry.
         return datetime.now(timezone.utc) < expiry - timedelta(seconds=60)
+
+
+CONTENT_TYPES = {
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".pdf": "application/pdf",
+    ".zip": "application/zip",
+}
+
+
+def encode_multipart(
+    fields: dict[str, Any], file_field: str, path: Path
+) -> tuple[bytes, str]:
+    """Build a multipart/form-data body for the upload endpoints.
+
+    The binary field name differs per endpoint, so it is always passed in
+    explicitly.
+    """
+    boundary = f"----EtsyUpload{secrets.token_hex(16)}"
+    content_type = CONTENT_TYPES.get(path.suffix.lower())
+    if content_type is None:
+        raise EtsyError(f"unsupported upload type: {path.suffix} ({path})")
+
+    parts: list[bytes] = []
+    for name, value in fields.items():
+        if value is None:
+            continue
+        parts.append(
+            f"--{boundary}\r\n"
+            f'Content-Disposition: form-data; name="{name}"\r\n\r\n'
+            f"{value}\r\n".encode("utf-8")
+        )
+    parts.append(
+        f"--{boundary}\r\n"
+        f'Content-Disposition: form-data; name="{file_field}"; '
+        f'filename="{path.name}"\r\n'
+        f"Content-Type: {content_type}\r\n\r\n".encode("utf-8")
+    )
+    parts.append(path.read_bytes())
+    parts.append(f"\r\n--{boundary}--\r\n".encode("utf-8"))
+    return b"".join(parts), f"multipart/form-data; boundary={boundary}"
 
 
 def _http(
@@ -230,7 +277,11 @@ class EtsyClient:
         form: dict[str, str] = {}
         for key, value in fields.items():
             # Etsy's form encoding takes array fields as comma-joined strings.
-            form[key] = ",".join(value) if isinstance(value, list) else str(value)
+            form[key] = (
+                ",".join(str(item) for item in value)
+                if isinstance(value, list)
+                else str(value)
+            )
         return urllib.parse.urlencode(form).encode("utf-8"), (
             "application/x-www-form-urlencoded"
         )
@@ -256,6 +307,114 @@ class EtsyClient:
             headers=self._headers(content_type),
             body=body,
         )
+
+    def _upload(
+        self, url: str, fields: dict[str, Any], file_field: str, path: Path
+    ) -> dict[str, Any]:
+        body, content_type = encode_multipart(fields, file_field, path)
+        # Uploads carry multi-megabyte payloads, so the default 30s read
+        # timeout is not enough on a slow link.
+        return self._request(
+            url,
+            method="POST",
+            headers=self._headers(content_type),
+            body=body,
+            timeout=180,
+        )
+
+    def upload_listing_image(
+        self,
+        listing_id: str,
+        path: Path,
+        *,
+        rank: int = 1,
+        alt_text: str | None = None,
+        overwrite: bool = True,
+    ) -> dict[str, Any]:
+        """Upload one listing photo. Field name is `image`."""
+        return self._upload(
+            f"{API_BASE}/shops/{self.config.shop_id}/listings/{listing_id}/images",
+            {
+                "rank": rank,
+                "overwrite": str(bool(overwrite)).lower(),
+                "alt_text": (alt_text or "")[:250] or None,
+            },
+            "image",
+            path,
+        )
+
+    def upload_listing_file(
+        self, listing_id: str, path: Path, *, rank: int = 1, name: str | None = None
+    ) -> dict[str, Any]:
+        """Upload one digital file.
+
+        The generated client docs name this field `_file`, but that is a
+        reserved-word workaround in their Java binding; the live API rejects it
+        with "Either a valid listing_file_id or file must be provided" and
+        wants plain `file`.
+        """
+        return self._upload(
+            f"{API_BASE}/shops/{self.config.shop_id}/listings/{listing_id}/files",
+            {"rank": rank, "name": name or path.name},
+            "file",
+            path,
+        )
+
+    def get_taxonomy_properties(self, taxonomy_id: int) -> list[dict[str, Any]]:
+        payload = self._request(
+            f"{API_BASE}/seller-taxonomy/nodes/{taxonomy_id}/properties",
+            method="GET",
+            headers=self._headers(),
+        )
+        return payload.get("results", [])
+
+    def get_listing_properties(self, listing_id: str) -> list[dict[str, Any]]:
+        payload = self._request(
+            f"{API_BASE}/shops/{self.config.shop_id}/listings/{listing_id}/properties",
+            method="GET",
+            headers=self._headers(),
+        )
+        return payload.get("results", [])
+
+    def update_listing_property(
+        self,
+        listing_id: str,
+        property_id: int,
+        *,
+        value_ids: list[int] | None = None,
+        values: list[str] | None = None,
+    ) -> dict[str, Any]:
+        fields: dict[str, Any] = {}
+        if value_ids:
+            fields["value_ids"] = value_ids
+        if values:
+            fields["values"] = values
+        body, content_type = self._encode_body(fields)
+        return self._request(
+            f"{API_BASE}/shops/{self.config.shop_id}/listings/{listing_id}"
+            f"/properties/{property_id}",
+            method="PUT",
+            headers=self._headers(content_type),
+            body=body,
+        )
+
+    def get_listing_images(self, listing_id: str) -> list[dict[str, Any]]:
+        # Reading images is listing-scoped even though uploading is
+        # shop-scoped; using the shop path here returns 404.
+        payload = self._request(
+            f"{API_BASE}/listings/{listing_id}/images",
+            method="GET",
+            headers=self._headers(),
+        )
+        return payload.get("results", [])
+
+    def get_listing_files(self, listing_id: str) -> list[dict[str, Any]]:
+        payload = self._request(
+            f"{API_BASE}/shops/{self.config.shop_id}/listings/{listing_id}/files",
+            method="GET",
+            headers=self._headers(),
+        )
+        return payload.get("results", [])
 
     def get_shop_listings(self, state: str = "active") -> list[dict[str, Any]]:
         """Enumerate the shop's listings so folders can be matched to them."""
