@@ -35,6 +35,21 @@ sheets. Read these files before changing a theme or month:
   other intermediate files to this template or customer output.
 - Use original, non-branded artwork. Reject copyrighted characters, logos,
   trademarks, watermarks, and copied commercial sticker designs.
+- Screen every subject before drawing it, on three grounds. When a subject is
+  doubtful, choose a different one and say what you substituted and why.
+  - **Commercial infringement.** Beyond logos and characters, a structure's
+    shape can itself be a registered trademark: Tokyo Tower, Tokyo Skytree and
+    Tsutenkaku are out. Castles, shrines, gardens, historic streets and natural
+    scenery are safe. Signage in a street scene must be invented, not copied.
+  - **Ethics.** Avoid subjects tied to mass death, atrocity or mourning unless
+    the brief explicitly asks for them. These sheets are decorative goods, so a
+    memorial placed among travel trinkets reads as commodifying the deaths it
+    commemorates. The Atomic Bomb Dome is the clearest case; disaster sites and
+    graves fall under the same rule. Seasonal timing can sharpen this — an
+    August sheet sits on the Hiroshima anniversary.
+  - **International reception.** These sheets sell worldwide. Avoid imagery
+    read as a political statement outside Japan: the rising-sun ray motif,
+    contested territories, and wartime iconography.
 
 ## Required completion gate
 
@@ -46,3 +61,17 @@ scripts/verify.sh --manifest output/releases/<theme>/<year-month>/manifest.json
 ```
 
 Then visually inspect the customer PNG and the QA alignment PDF at full size.
+
+## Scope boundary
+
+This contract covers `output/` only: artwork, manifests, and the build/verify
+pipeline. Producing a release is where the job ends.
+
+`listings/` is the sales side and is out of scope. Etsy product copy (title,
+description, tags in English and Japanese) is written in a separate step that
+reads the finished manifest, and pushing it to Etsy is gated on human approval
+because it rewrites a live storefront. Do not write to `listings/`, do not
+create or edit drafts there, and do not call the Etsy API.
+
+Report the release as done once `verify.sh` passes; the listing step picks it
+up from there.
