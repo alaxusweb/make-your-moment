@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "theme": {
+    "slug": "theme-slug",
+    "year_month": "YYYY-MM",
+    "month_label_ja": "M月",
+    "name_ja": "テーマ和名",
+    "name_en": "ENGLISH THEME",
+    "title_line": "テーマ和名 / ENGLISH THEME",
+    "concept_lines": ["テーマ", "M月"]
+  },
+  "canvas": {
+    "width_px": 3072,
+    "height_px": 2048,
+    "dpi": 300,
+    "color_space": "sRGB",
+    "alpha": true
+  },
+  "layout": {
+    "columns": 7,
+    "rows": 5,
+    "column_centers_px": [292, 708, 1124, 1540, 1956, 2372, 2788],
+    "row_centers_px": [285, 670, 1055, 1440, 1825],
+    "day_art_max_px": [360, 285],
+    "day_art_offset_y_px": -38,
+    "label_size_px": [350, 56],
+    "label_offset_y_px": 140,
+    "bonus_art_max_px": [360, 330],
+    "minimum_cut_gap_px": 24,
+    "concept_text_offset_px": [42, 4]
+  },
+  "typography": {
+    "label_font_size_px": 20,
+    "label_char_space_px": 0.65,
+    "label_text_color": "#17324D",
+    "label_outer_color": "#FFFFFF",
+    "label_inner_color": "#FFF9EC",
+    "label_stroke_color": "#D8BB78",
+    "label_stroke_px": 2,
+    "title_font_size_px": 31,
+    "title_char_space_px": 0.8,
+    "title_top_px": 20,
+    "concept_font_size_px": 27,
+    "concept_char_space_px": 0.65,
+    "concept_line_spacing_px": 4,
+    "design_font_path": null,
+    "editable_font_path": null,
+    "editable_font_index": 0
+  },
+  "counts": {
+    "calendar_days": 31,
+    "day_stickers": 31,
+    "random_bonuses": 3,
+    "concept_seals": 1,
+    "total_slots": 35
+  },
+  "artifacts": {
+    "customer_directory": "output/releases/theme-slug/YYYY-MM/customer",
+    "individual_directory": "output/releases/theme-slug/YYYY-MM/customer/individual",
+    "qa_directory": "output/releases/theme-slug/YYYY-MM/qa",
+    "png_filename": "theme-slug-YYYY-MM-3072x2048-300dpi-transparent.png",
+    "pdf_filename": "theme-slug-YYYY-MM-editable-flower-labels.pdf",
+    "alignment_pdf_filename": "theme-slug-YYYY-MM-alignment-check.pdf"
+  },
+  "day_stickers": [],
+  "bonuses": []
+}

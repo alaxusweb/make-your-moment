@@ -1,0 +1,16 @@
+LICENSE TERMS
+
+Seller: <seller name>
+Product: <product name>
+
+Permitted use:
+<define personal use, commercial use, and printed-item use>
+
+Not permitted:
+<define redistribution, resale of source files, trademark use, and prohibited uses>
+
+Contact:
+<support contact or storefront URL>
+
+Complete these terms for the target marketplace before sale. Do not distribute
+this placeholder as the final customer license.
