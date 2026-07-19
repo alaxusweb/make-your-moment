@@ -19,7 +19,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Literal
@@ -35,7 +35,7 @@ class EtsyError(RuntimeError):
     pass
 
 
-def check_credential(field: str, value: str) -> str:
+def check_credential(name: str, value: str) -> str:
     """Reject placeholder or malformed credentials with a readable message.
 
     HTTP header values must be latin-1 encodable, so an unedited Japanese
@@ -43,10 +43,10 @@ def check_credential(field: str, value: str) -> str:
     """
     value = (value or "").strip()
     if not value:
-        raise EtsyError(f"{field} is empty in etsy.json")
+        raise EtsyError(f"{name} is empty in etsy.json")
     if not value.isascii() or any(character.isspace() for character in value):
         raise EtsyError(
-            f"{field} still looks like the placeholder from etsy.example.json "
+            f"{name} still looks like the placeholder from etsy.example.json "
             f"({value!r}). Replace it with the real value from the Etsy "
             f"developer dashboard."
         )
@@ -63,6 +63,9 @@ class EtsyConfig:
     access_token: str | None = None
     access_token_expires_at: str | None = None
     body_encoding: BodyEncoding = "form"
+    # Shape of new listings, mirrored from the shop's existing products rather
+    # than hardcoded, so a taxonomy or policy change is a config edit.
+    listing_defaults: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def load(cls, path: Path) -> EtsyConfig:
@@ -73,9 +76,9 @@ class EtsyConfig:
             )
         payload = json.loads(path.read_text(encoding="utf-8"))
         missing = [
-            field
-            for field in ("keystring", "shared_secret", "shop_id", "refresh_token")
-            if not payload.get(field)
+            key
+            for key in ("keystring", "shared_secret", "shop_id", "refresh_token")
+            if not payload.get(key)
         ]
         if missing:
             raise EtsyError(f"{path} is missing required fields: {missing}")
@@ -90,6 +93,7 @@ class EtsyConfig:
             access_token=payload.get("access_token"),
             access_token_expires_at=payload.get("access_token_expires_at"),
             body_encoding=payload.get("body_encoding", "form"),
+            listing_defaults=payload.get("listing_defaults", {}),
         )
 
     def save(self) -> None:
@@ -101,6 +105,7 @@ class EtsyConfig:
             "access_token": self.access_token,
             "access_token_expires_at": self.access_token_expires_at,
             "body_encoding": self.body_encoding,
+            "listing_defaults": self.listing_defaults,
         }
         self.path.write_text(
             json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
@@ -235,6 +240,21 @@ class EtsyClient:
             f"{API_BASE}/shops/{shop_id}",
             method="GET",
             headers=self._headers(),
+        )
+
+    def create_draft_listing(self, fields: dict[str, Any]) -> dict[str, Any]:
+        """Create a new listing in draft state.
+
+        Drafts are never visible to buyers, so a registration run cannot
+        accidentally put an unfinished product on sale. Activating it stays a
+        manual step in Shop Manager, where price and files are reviewed.
+        """
+        body, content_type = self._encode_body(fields)
+        return self._request(
+            f"{API_BASE}/shops/{self.config.shop_id}/listings",
+            method="POST",
+            headers=self._headers(content_type),
+            body=body,
         )
 
     def get_shop_listings(self, state: str = "active") -> list[dict[str, Any]]:

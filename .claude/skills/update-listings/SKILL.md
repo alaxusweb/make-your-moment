@@ -42,7 +42,7 @@ python3 listings/tools/listing.py plan
 
 | action | 対応 |
 |---|---|
-| `link_required` | 未紐付け。`shop-listings` で既存商品を列挙し、対応をユーザーに確認して `link` |
+| `link_required` | 未紐付け。`shop-listings` で既存商品を列挙し、対応を確認して `link`。Etsy 側に該当商品がなければ新規出品なので、原稿を書いてから `create` |
 | `write_draft` | 原稿がない。新規執筆 |
 | `rewrite_draft_manifest_changed` | 素材が変わった。原稿を書き直す |
 | `rewrite_draft_market_changed` | 市況が変わった。キーワードを見直す |

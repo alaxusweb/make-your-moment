@@ -6,5 +6,15 @@
   "refresh_token": "authorize で取得",
   "access_token": null,
   "access_token_expires_at": null,
-  "body_encoding": "form"
+  "body_encoding": "form",
+  "listing_defaults": {
+    "taxonomy_id": 6844,
+    "quantity": 100,
+    "who_made": "i_did",
+    "when_made": "2020_2026",
+    "type": "download",
+    "return_policy_id": 1,
+    "price": 5.0,
+    "currency": "USD"
+  }
 }

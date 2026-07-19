@@ -359,6 +359,138 @@ def command_authorize(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_create(args: argparse.Namespace) -> int:
+    """Register a new release on Etsy as a draft listing, then link it.
+
+    Deliberately stops at 'draft': price, digital files and photos still need a
+    human pass in Shop Manager, and an API-created listing must never be able
+    to go on sale unreviewed.
+    """
+    key = args.release
+    try:
+        rel = release_module.find_release(PROJECT_ROOT, key)
+    except (FileNotFoundError, ValueError) as error:
+        print(f"refused: {error}", file=sys.stderr)
+        return 1
+    registry = registry_module.Registry(REGISTRY_DB)
+
+    existing = registry.get(key)
+    if existing:
+        print(f"refused: {key} is already linked to listing "
+              f"{existing.listing_id}. Use 'push' to update it.", file=sys.stderr)
+        return 1
+
+    path = draft_module.draft_path(PROJECT_ROOT, key)
+    if not path.exists():
+        print(f"refused: no draft at {path.relative_to(PROJECT_ROOT)}. "
+              f"Run 'init-draft' and write the copy first.", file=sys.stderr)
+        return 1
+
+    loaded = draft_module.load_draft(path)
+    issues = draft_module.validate_draft(
+        loaded,
+        current_manifest_sha256=rel.manifest_sha256,
+        current_market_doc_sha256=market_doc_sha256(),
+    )
+    for issue in issues:
+        print(f"  {issue}")
+    if draft_module.has_errors(issues):
+        print("refused: fix the errors above before creating", file=sys.stderr)
+        return 1
+
+    try:
+        config = etsy_api.EtsyConfig.load(ETSY_CONFIG)
+    except etsy_api.EtsyError as error:
+        print(f"failed: {error}", file=sys.stderr)
+        return 1
+
+    defaults = dict(config.listing_defaults)
+    missing = [
+        name
+        for name in ("taxonomy_id", "quantity", "who_made", "when_made", "price")
+        if name not in defaults
+    ]
+    if missing:
+        print(f"refused: listing_defaults in etsy.json is missing {missing}",
+              file=sys.stderr)
+        return 1
+
+    primary = loaded.listings[loaded.primary_language]
+    fields: dict[str, object] = {
+        "quantity": defaults["quantity"],
+        "title": primary.title,
+        "description": primary.description,
+        "price": args.price if args.price is not None else defaults["price"],
+        "who_made": defaults["who_made"],
+        "when_made": defaults["when_made"],
+        "taxonomy_id": defaults["taxonomy_id"],
+        "type": defaults.get("type", "download"),
+        "tags": primary.tags,
+    }
+    if primary.materials:
+        fields["materials"] = primary.materials
+    if defaults.get("return_policy_id"):
+        fields["return_policy_id"] = defaults["return_policy_id"]
+
+    if not args.apply:
+        print(f"dry run: would create a DRAFT listing for {key}")
+        for name, value in fields.items():
+            shown = value if not isinstance(value, str) else f"{value[:70]}…" \
+                if len(value) > 70 else value
+            print(f"  {name:16}= {shown if not isinstance(value, list) else value}")
+        for language, localized in sorted(loaded.listings.items()):
+            if language == loaded.primary_language:
+                continue
+            print(f"  then PUT [{language}] translation: {localized.title[:60]}…")
+        print("re-run with --apply to create it")
+        return 0
+
+    try:
+        client = etsy_api.EtsyClient(config)
+        created = client.create_draft_listing(fields)
+        listing_id = str(created.get("listing_id"))
+        if not listing_id or listing_id == "None":
+            print(f"failed: create returned no listing_id: {created}", file=sys.stderr)
+            return 1
+        print(f"created draft listing {listing_id} (state={created.get('state')})")
+        etsy_api.throttle()
+
+        registry.link(
+            release_key=key,
+            theme_slug=rel.theme_slug,
+            year_month=rel.year_month,
+            listing_id=listing_id,
+            manifest_sha256=rel.manifest_sha256,
+            listing_url=f"https://www.etsy.com/listing/{listing_id}",
+            note="created via listing.py create (draft)",
+        )
+        print(f"linked {key} -> {listing_id}")
+
+        for language, localized in sorted(loaded.listings.items()):
+            if language == loaded.primary_language:
+                continue
+            client.update_translation(
+                listing_id,
+                language,
+                {
+                    "title": localized.title,
+                    "description": localized.description,
+                    "tags": localized.tags,
+                },
+            )
+            etsy_api.throttle()
+            print(f"pushed [{language}] translation")
+    except (etsy_api.EtsyError, registry_module.RegistryError) as error:
+        print(f"failed: {error}", file=sys.stderr)
+        return 1
+
+    print("\nremaining manual steps in Shop Manager:")
+    print("  - upload the digital files (PNG sheet, PDF, individual PNGs)")
+    print("  - upload listing photos / the marketing eyecatch")
+    print("  - confirm the price, then publish")
+    return 0
+
+
 def command_shop_listings(args: argparse.Namespace) -> int:
     """Enumerate the shop's listings so releases can be matched to them."""
     try:
@@ -680,6 +812,14 @@ def build_parser() -> argparse.ArgumentParser:
     authorize.add_argument("--no-browser", action="store_true")
     authorize.set_defaults(func=command_authorize)
 
+    create = sub.add_parser(
+        "create", help="register a new release as an Etsy draft listing"
+    )
+    create.add_argument("--release", required=True)
+    create.add_argument("--apply", action="store_true")
+    create.add_argument("--price", type=float, help="overrides listing_defaults")
+    create.set_defaults(func=command_create)
+
     shop_listings = sub.add_parser(
         "shop-listings", help="list the shop's Etsy listings and their link state"
     )
@@ -721,7 +861,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
-    return int(args.func(args))
+    try:
+        return int(args.func(args))
+    except (FileNotFoundError, ValueError) as error:
+        # Missing or malformed release/draft input, not a bug worth a traceback.
+        print(f"error: {error}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

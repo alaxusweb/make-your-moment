@@ -43,6 +43,8 @@ python3 listings/tools/listing.py push --release <key>           # dry run
 python3 listings/tools/listing.py push --release <key> --apply   # 実送信
 python3 listings/tools/listing.py push --release <key> --language ja --apply  # 部分反映
 python3 listings/tools/listing.py shop-listings                  # 既存商品の一覧と紐付け状態
+python3 listings/tools/listing.py create --release <key>          # 新規出品 dry run
+python3 listings/tools/listing.py create --release <key> --apply  # draft 作成 + 自動 link
 python3 listings/tools/listing.py link --release <key> --listing-id <id>
 python3 listings/tools/listing.py resolve-shop --shop-name <name> --write  # shop_id 取得
 ```
@@ -125,7 +127,34 @@ OAuth 付きの呼び出しは keystring 単体で通るが、Etsy が shared se
 `form`（既定・配列はカンマ結合）と `json` を切り替えられる。どちらでも送信後に GET で
 読み戻して照合するので、形式ミスは silent failure にならない。
 
+## 新規出品
+
+`create` は `createDraftListing` を呼び、**必ず draft 状態**で作る。価格・デジタル
+ファイル・商品写真は Shop Manager で人が確認する前提なので、API 経由で販売開始
+できないようにしてある。作成後は自動で registry へ link し、`en` 翻訳も送る。
+
+新規出品の形は `etsy.json` の `listing_defaults` に置く。既存商品から採取した値で、
+Etsy 側でポリシーが変わったらここを直す。雛形は `etsy.example.json` にもある。
+
+| キー | 値 | 意味 |
+|---|---|---|
+| `taxonomy_id` | 6844 | Etsy のカテゴリ ID |
+| `type` | download | ダウンロード商品 |
+| `quantity` | 100 | 在庫数 |
+| `who_made` / `when_made` | i_did / 2020_2026 | 出品者情報 |
+| `return_policy_id` | 1 | 返品ポリシー |
+| `price` / `currency` | 5.0 / USD | `create --price` で上書き可 |
+
+不足があれば `create` が実行前に拒否する（`listing_defaults in etsy.json is
+missing [...]`）ので、欠けたまま出品されることはない。
+
+作成後に手作業で残るもの:
+
+- デジタルファイルのアップロード（PNGシート・PDF・個別PNG）
+- 商品写真（`marketing/` のアイキャッチ）
+- 価格の確認と公開
+
 ## 将来やること
 
-`plan` の `action` に `link_required` が出るので、未登録リリースの検出は済んでいる。
-Etsy の `createDraftListing` を使った新規出品の自動化は未実装。
+デジタルファイルと商品画像のアップロード（`uploadListingFile` / `uploadListingImage`）は
+未実装。現状は Shop Manager で手動。
