@@ -1,0 +1,10 @@
+{
+  "keystring": "Etsy アプリの API Key keystring",
+  "shared_secret": "Etsy アプリの API Key shared secret",
+  "shop_id": "resolve-shop で取得（数値）",
+  "redirect_uri": "http://localhost:3003/oauth/redirect",
+  "refresh_token": "authorize で取得",
+  "access_token": null,
+  "access_token_expires_at": null,
+  "body_encoding": "form"
+}
