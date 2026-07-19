@@ -69,3 +69,12 @@ PDF/PNG一致を検査する。
 
 購入者向けは`customer/`のみ。`qa/`、manifest、生成スクリプトは販売ZIPへ入れない。
 個別35枚を商品に含めるかは商品仕様で決める。7月例では分割データとして含めている。
+
+## 7. 販売用アイキャッチを作る
+
+`scripts/build_listing_eyecatch.py`で`marketing/`へ1024×1024px・72dpi・
+アルファなしPNGを生成する。ロゴ、テーマ英名、月名、代表シール、共通の
+`EASY DOWNLOAD`、`PRINTABLE PNG`、`EDITABLE PDF`マークを含める。
+
+アイキャッチは販売ページ用であり、購入者向け`customer/`へ入れない。
+共通アセット、実行例、QA条件は`docs/LISTING_EYECATCH_SPEC.md`を参照する。
