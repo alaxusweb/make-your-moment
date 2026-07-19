@@ -21,6 +21,7 @@ scripts/verify.sh --manifest output/releases/<theme>/<year-month>/manifest.json
 ```
 
 5. `customer/`のPNG・PDFと、`qa/`のalignment PDFを原寸確認する。
+6. 販売ページ用に`marketing/`へ1024px正方形のアイキャッチ画像を生成する。
 
 ## 7月版の完成例
 
@@ -50,4 +51,5 @@ output/releases/japanese-summer-flowers/2026-07/
 PDFとPNGで座標や文字列を別管理しないため、位置ずれを防げます。
 
 詳細は[制作仕様](docs/PRODUCTION_SPEC.md)、[月次手順](docs/MONTHLY_WORKFLOW.md)、
-[PDFダウンロード仕様](docs/DOWNLOAD_PACKAGE_SPEC.md)、[QA](docs/QA_CHECKLIST.md)を参照してください。
+[PDFダウンロード仕様](docs/DOWNLOAD_PACKAGE_SPEC.md)、[QA](docs/QA_CHECKLIST.md)、
+[販売用アイキャッチ仕様](docs/LISTING_EYECATCH_SPEC.md)を参照してください。
