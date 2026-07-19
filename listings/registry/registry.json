@@ -1,6 +1,21 @@
 {
-  "exported_at": "2026-07-19T12:36:58+00:00",
+  "exported_at": "2026-07-19T22:43:08+00:00",
   "links": [
+    {
+      "release_key": "japanese-landmarks/2026-08",
+      "theme_slug": "japanese-landmarks",
+      "year_month": "2026-08",
+      "marketplace": "etsy",
+      "listing_id": "4540588624",
+      "listing_url": "https://www.etsy.com/listing/4540588624",
+      "linked_manifest": "4df04ec2ed3d7e6e0bc3422c63a55f8e0fd671679ff872a040e8333ca4a19f03",
+      "linked_at": "2026-07-19T22:40:19+00:00",
+      "pushed_at": "2026-07-19T22:43:08+00:00",
+      "pushed_manifest": "4df04ec2ed3d7e6e0bc3422c63a55f8e0fd671679ff872a040e8333ca4a19f03",
+      "pushed_market_doc": "fc84fab0ff2a30d4f1b048777c8f13f79dad7f225d3c0e9ec0c8e279cdc61065",
+      "pushed_draft": "8001de42d1aebc13d887364a0dc3666faa6bdfe5d76850a4757a14e834eba815",
+      "note": "created via listing.py create (draft)"
+    },
     {
       "release_key": "japanese-summer-events/2026-08",
       "theme_slug": "japanese-summer-events",
