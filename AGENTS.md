@@ -11,6 +11,12 @@ sheets. Read these files before changing a theme or month:
 
 ## Non-negotiable rules
 
+- Write `manifest.json` before generating any artwork. The manifest fixes the
+  theme, the day labels, the bonus subjects, and every `sticker-NN.png`
+  filename; artwork is then generated to fill those named slots. Never generate
+  images first and back-fill a manifest to match whatever came out. Slot 35 in
+  particular must be drawn knowing it is the concept seal, because it needs
+  clear space for the concept text.
 - Use a 3072 x 2048 px, 300 dpi, sRGB RGBA canvas with a transparent background.
 - Use a 7 x 5 grid with 35 positions and at least 24 px cutting clearance.
 - Fill the month day count first (28-31). Fill the remaining positions with
