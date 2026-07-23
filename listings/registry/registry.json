@@ -1,5 +1,5 @@
 {
-  "exported_at": "2026-07-19T22:43:08+00:00",
+  "exported_at": "2026-07-23T02:30:56+00:00",
   "links": [
     {
       "release_key": "japanese-landmarks/2026-08",
@@ -45,6 +45,21 @@
       "pushed_market_doc": "fc84fab0ff2a30d4f1b048777c8f13f79dad7f225d3c0e9ec0c8e279cdc61065",
       "pushed_draft": "fec2d950aa4cf59dfd427b511776c4306beccbfd67b0c7d9e1707acdfdc90bd4",
       "note": "手動出品済みの既存リスティング。API 列挙で対応確認"
+    },
+    {
+      "release_key": "japanese-summer-wagashi/2026-08",
+      "theme_slug": "japanese-summer-wagashi",
+      "year_month": "2026-08",
+      "marketplace": "etsy",
+      "listing_id": "4542424955",
+      "listing_url": "https://www.etsy.com/listing/4542424955",
+      "linked_manifest": "45d33db284d138b0ac0c0c58d20f9667eab7cc1e4e4c8f729336b561ed464594",
+      "linked_at": "2026-07-23T02:27:53+00:00",
+      "pushed_at": "2026-07-23T02:30:56+00:00",
+      "pushed_manifest": "45d33db284d138b0ac0c0c58d20f9667eab7cc1e4e4c8f729336b561ed464594",
+      "pushed_market_doc": "fc84fab0ff2a30d4f1b048777c8f13f79dad7f225d3c0e9ec0c8e279cdc61065",
+      "pushed_draft": "23de2c562602aaef77411f0c84267a2f56b4062b582a86cab4a685313cbd4fa3",
+      "note": "created via listing.py create (draft)"
     }
   ]
 }
