@@ -86,3 +86,13 @@ PDF/PNG一致を検査する。
 
 アイキャッチは販売ページ用であり、購入者向け`customer/`へ入れない。
 共通アセット、実行例、QA条件は`docs/LISTING_EYECATCH_SPEC.md`を参照する。
+
+## 8. 販売用シート画像を作る（商品画像 rank 2）
+
+`scripts/build_photo_sheet.py`で、納品シートPNG（透過300dpi）をnear-white背景に
+平坦化し長辺1200pxへ縮小した72dpiのJPEGを`marketing/`へ生成する。これが商品画像の
+2枚目（rank 2）。ファイル名は`<theme>-<year-month>-photo-sheet.jpg`（`photo-sheet`を
+含めると`upload`が拾う）。背景・長辺は`--background` / `--long-edge`で変更可。
+
+シート画像も販売ページ用であり、`customer/`へ入れない。背景の理由、実行例、
+アップロード方法、QA条件は`docs/LISTING_SHEET_IMAGE_SPEC.md`を参照する。

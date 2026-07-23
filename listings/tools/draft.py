@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 DRAFT_VERSION = 1
-SUPPORTED_LANGUAGES = ("en", "ja")
+SUPPORTED_LANGUAGES = ("en", "ja", "de", "fr")
 
 # Etsy listing limits. See developers.etsy.com updateListing / updateListingTranslation.
 TITLE_MAX_CHARS = 140

@@ -244,6 +244,8 @@ def command_init_draft(args: argparse.Namespace) -> int:
             "listings": {
                 "en": {"title": "", "description": "", "tags": [], "materials": []},
                 "ja": {"title": "", "description": "", "tags": [], "materials": []},
+                "de": {"title": "", "description": "", "tags": [], "materials": []},
+                "fr": {"title": "", "description": "", "tags": [], "materials": []},
             },
             "compliance": {
                 "ai_disclosure": True,
