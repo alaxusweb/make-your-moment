@@ -4,3 +4,6 @@ __pycache__/
 .build/
 tmp/
 *.tmp
+
+# Etsy API 認証情報。registry.sqlite3 と registry.json は追跡する
+listings/config/etsy.json

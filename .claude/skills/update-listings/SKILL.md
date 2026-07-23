@@ -84,6 +84,11 @@ python3 listings/tools/listing.py init-draft --release <theme>/<year-month>
 **AI 開示は必須**。`compliance.ai_disclosure` は true のまま、説明文にも開示文を入れる。
 Etsy は 2026-01-14 から生成 AI 開示を強制執行している。外すと出品削除リスク。
 
+ただし **Etsy が実際に見るのは Shop Manager の「制作方法 > whatContent:ai_gen」
+チェックボックス**であり、これは API に存在しないためツールからは設定できない。
+`validate` が通っても規約を満たしたことにはならない。公開前に必ずユーザーへ
+手動チェックを依頼すること。
+
 ### 4. 検証する
 
 ```sh
