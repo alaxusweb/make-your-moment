@@ -1,0 +1,34 @@
+{
+  "keystring": "Etsy アプリの API Key keystring",
+  "shared_secret": "Etsy アプリの API Key shared secret",
+  "shop_id": "resolve-shop で取得（数値）",
+  "redirect_uri": "http://localhost:3003/oauth/redirect",
+  "refresh_token": "authorize で取得",
+  "access_token": null,
+  "access_token_expires_at": null,
+  "body_encoding": "form",
+  "listing_defaults": {
+    "taxonomy_id": 6844,
+    "quantity": 100,
+    "who_made": "i_did",
+    "when_made": "2020_2026",
+    "type": "download",
+    "return_policy_id": 1,
+    "price": 5.0,
+    "currency": "USD",
+    "properties": [
+      {
+        "property_id": 47626759760,
+        "name": "Craft type",
+        "value_ids": [
+          584,
+          541
+        ],
+        "values": [
+          "Scrapbooking",
+          "Collage"
+        ]
+      }
+    ]
+  }
+}
