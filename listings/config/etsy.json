@@ -1,0 +1,33 @@
+{
+  "keystring": "82lrvlo8p4eixjur5ucb3jsy",
+  "shared_secret": "9ea5akfd8q",
+  "shop_id": "67052826",
+  "refresh_token": "1266368197.q8KYGPplzjXF6G0dF3Yfo_Aq2gYMknftmhkHrsDJFjmeWitsoHy5gllIY_TBuHkS1GhT7bc4GdP88NnA2JHh0k84q",
+  "access_token": "1266368197.oVKruA-U26nIOjqTTm6k6SaABcDF4a2UEf0LqmliZXS6YVXWTiDJIYnODQ6SKvZP4BNLQjKh0WNYJ0lH4jQ9I0ezc",
+  "access_token_expires_at": "2026-07-23T02:45:53+00:00",
+  "body_encoding": "form",
+  "listing_defaults": {
+    "taxonomy_id": 6844,
+    "quantity": 100,
+    "who_made": "i_did",
+    "when_made": "2020_2026",
+    "type": "download",
+    "return_policy_id": 1,
+    "price": 5.0,
+    "currency": "USD",
+    "properties": [
+      {
+        "property_id": 47626759760,
+        "name": "Craft type",
+        "value_ids": [
+          584,
+          541
+        ],
+        "values": [
+          "Scrapbooking",
+          "Collage"
+        ]
+      }
+    ]
+  }
+}
